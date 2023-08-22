@@ -1,3 +1,5 @@
+from typing import Optional
+
 from tabulate import tabulate
 
 
@@ -51,12 +53,15 @@ class Opcode:
             return src1 / src2
 
 
+# TODO: move to a class
 # RAT: architectonic register to physical register and value
 RAT = [None] * 5
-REGS = range(5)
+REGS: list[float] = list(range(5))
 # ROB: physical register to architectonic register and data
-ROB = [[None, None]] * 5
+ROB: list[tuple[Optional[Operand], Optional[float]]] = [(None, None)] * 5
+ROB_start = 0
 
+# TODO: turn ROB_CONT into a list of objects / dictionaries
 # ROB_CONT: (op, src1_ready, src1, src2_ready, src2, dest, cycles_left)
 ROB_CONT = []
 
@@ -74,7 +79,7 @@ class Instruction:
 
 def process(instruction: Instruction):
     global last_physical_register
-    ROB[last_physical_register.value] = [instruction.operands[0], None]
+    ROB[last_physical_register.value] = (instruction.operands[0], None)
     ROB_CONT.append(
         [instruction.opcode, False, instruction.operands[1], False, instruction.operands[2], last_physical_register])
     if not instruction.operands[1].is_register:
@@ -105,16 +110,17 @@ def process_instructions(instructions):
 
 
 def cycle():
-    # while ROB[0][0] is not None and ROB[0][1] is not None:
-    #     print(f"Instruction {ROB[0][0]} executed")
-    #     RAT[ROB[0][0].value] = ROB[0][1]
-    #     ROB.pop(0)
+    global ROB_start
+    while ROB_start < len(ROB) and ROB[ROB_start][0] is not None and ROB[ROB_start][1] is not None:
+        REGS[ROB[ROB_start][0].value] = ROB[ROB_start][1]
+        ROB[ROB_start] = (None, None)
+        ROB_start += 1
     readyValues = []
     for inst in ROB_CONT:
         if inst[1] and inst[3]:
             inst[0].cycles -= 1
             if inst[0].cycles == 0:
-                ROB[inst[5].value][1] = (inst[0].compute(inst[2].value, inst[4].value))
+                ROB[inst[5].value] = (ROB[inst[5].value][0], inst[0].compute(inst[2].value, inst[4].value))
                 readyValues.append((inst[5], ROB[inst[5].value][1]))
                 ROB_CONT.remove(inst)
     for readyValue in readyValues:
