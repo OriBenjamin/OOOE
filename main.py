@@ -33,7 +33,7 @@ class Opcode:
         elif self.name == 'MUL':
             self.cycles = 2
         elif self.name == 'DIV':
-            self.cycles = 3
+            self.cycles = 4
         else:
             raise Exception("Invalid opcode")
 
@@ -105,6 +105,10 @@ def process_instructions(instructions):
 
 
 def cycle():
+    # while ROB[0][0] is not None and ROB[0][1] is not None:
+    #     print(f"Instruction {ROB[0][0]} executed")
+    #     RAT[ROB[0][0].value] = ROB[0][1]
+    #     ROB.pop(0)
     readyValues = []
     for inst in ROB_CONT:
         if inst[1] and inst[3]:
@@ -158,5 +162,10 @@ if __name__ == '__main__':
     print_tables()
     cycle()
     cycle()
-    # cycle()
+    cycle()
+    cycle()
+    cycle()
+    cycle()
+    cycle()
+    cycle()
     print_tables()
