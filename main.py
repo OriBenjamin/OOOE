@@ -16,29 +16,55 @@ class Operand:
         else:
             return f"{self.value}"
 
+    def __eq__(self, other):
+        if isinstance(other, Operand):
+            return self.value == other.value and self.is_register == other.is_register and self.is_physical == other.is_physical
+        else:
+            return self.value == other
 
-# opcodes
-ADD = 0x00
-SUB = 0x01
-MUL = 0x02
-DIV = 0x03
 
-# tables
+class Opcode:
+    def __init__(self, name):
+        self.name = name
+        if self.name == 'ADD':
+            self.cycles = 1
+        elif self.name == 'SUB':
+            self.cycles = 1
+        elif self.name == 'MUL':
+            self.cycles = 2
+        elif self.name == 'DIV':
+            self.cycles = 3
+        else:
+            raise Exception("Invalid opcode")
+
+    def __str__(self):
+        return self.name
+
+    def compute(self, src1, src2):
+        if self.name == 'ADD':
+            return src1 + src2
+        elif self.name == 'SUB':
+            return src1 - src2
+        elif self.name == 'MUL':
+            return src1 * src2
+        elif self.name == 'DIV':
+            return src1 / src2
+
 
 # RAT: architectonic register to physical register and value
 RAT = [None] * 5
 REGS = range(5)
 # ROB: physical register to architectonic register and data
-ROB = [(None, None)] * 5
+ROB = [[None, None]] * 5
 
-# ROB_CONT: (op, src1_ready, src1, src2_ready, src2, dest)
+# ROB_CONT: (op, src1_ready, src1, src2_ready, src2, dest, cycles_left)
 ROB_CONT = []
 
 last_physical_register = Operand(0, True, True)
 
 
 class Instruction:
-    def __init__(self, opcode, operands: tuple[Operand, Operand, Operand]):
+    def __init__(self, opcode: Opcode, operands: tuple[Operand, Operand, Operand]):
         self.opcode = opcode
         self.operands = operands
 
@@ -48,8 +74,9 @@ class Instruction:
 
 def process(instruction: Instruction):
     global last_physical_register
-    ROB[last_physical_register.value] = (instruction.operands[0].value, None)
-    ROB_CONT.append([instruction.opcode, False, instruction.operands[1], False, instruction.operands[2], last_physical_register])
+    ROB[last_physical_register.value] = [instruction.operands[0], None]
+    ROB_CONT.append(
+        [instruction.opcode, False, instruction.operands[1], False, instruction.operands[2], last_physical_register])
     if not instruction.operands[1].is_register:
         ROB_CONT[-1][1] = True
     else:
@@ -77,6 +104,25 @@ def process_instructions(instructions):
         process(instruction)
 
 
+def cycle():
+    readyValues = []
+    for inst in ROB_CONT:
+        if inst[1] and inst[3]:
+            inst[0].cycles -= 1
+            if inst[0].cycles == 0:
+                ROB[inst[5].value][1] = (inst[0].compute(inst[2].value, inst[4].value))
+                readyValues.append((inst[5], ROB[inst[5].value][1]))
+                ROB_CONT.remove(inst)
+    for readyValue in readyValues:
+        for inst in ROB_CONT:
+            if inst[2] == readyValue[0]:
+                inst[1] = True
+                inst[2] = Operand(readyValue[1], False)
+            if inst[4] == readyValue[0]:
+                inst[3] = True
+                inst[4] = Operand(readyValue[1], False)
+
+
 def print_tables():
     rat_table = {
         'Reg': [f"R{i}" for i in range(len(RAT))],
@@ -89,7 +135,7 @@ def print_tables():
     rob_table = {
         '#': [f"P{i}" for i in range(len(ROB))],
         'Valid': [(reg[0] is not None) for reg in ROB],
-        'Dest': [f"R{reg[0]}" if (reg[0] is not None) else "" for reg in ROB],
+        'Dest': [reg[0] if (reg[0] is not None) else "" for reg in ROB],
         'Data v': [(reg[1] is not None) for reg in ROB],
         'Data': [reg[1] for reg in ROB]
     }
@@ -97,17 +143,20 @@ def print_tables():
     print(tabulate(rob_table, headers='keys', tablefmt='psql'))
     rob_cont_table = ROB_CONT
     print("ROB_CONT:")
-    print(tabulate(rob_cont_table, headers=['Op', 'src1_ready', 'src1', 'rc2_ready', 'src2', 'dest'], tablefmt='psql'))
+    print(tabulate(rob_cont_table, headers=['Op', 'src1_ready', 'src1', 'rc2_ready', 'src2', 'dest'],
+                   tablefmt='psql'))
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+    # print_tables()
+    process(Instruction(Opcode('DIV'), (Operand(2), Operand(4), Operand(3))))
+    process(Instruction(Opcode('MUL'), (Operand(3), Operand(50, False), Operand(4))))
+    process(Instruction(Opcode('DIV'), (Operand(1), Operand(2), Operand(3))))
+    process(Instruction(Opcode('ADD'), (Operand(2), Operand(4), Operand(3))))
+    process(Instruction(Opcode('ADD'), (Operand(3), Operand(2), Operand(3))))
     print_tables()
-    process(Instruction(DIV, (Operand(2), Operand(4), Operand(3))))
-    process(Instruction(MUL, (Operand(3), Operand(50, False), Operand(4))))
-    process(Instruction(DIV, (Operand(1), Operand(2), Operand(3))))
-    process(Instruction(ADD, (Operand(2), Operand(4), Operand(3))))
-    process(Instruction(ADD, (Operand(3), Operand(2), Operand(3))))
+    cycle()
+    cycle()
+    # cycle()
     print_tables()
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
