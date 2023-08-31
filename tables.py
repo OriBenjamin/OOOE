@@ -54,18 +54,22 @@ class Opcode:
 
 
 # TODO: move to a class
-# RAT: architectonic register to physical register and value
 RAT = [None] * 5
 REGS: list[float] = list(range(5))
-# ROB: physical register to architectonic register and data
 ROB: list[tuple[Optional[Operand], Optional[float]]] = [(None, None)] * 5
 ROB_start = 0
-
-# TODO: turn ROB_CONT into a list of objects / dictionaries
-# ROB_CONT: (op, src1_ready, src1, src2_ready, src2, dest, cycles_left)
 ROB_CONT = []
-
 last_physical_register = Operand(0, True, True)
+
+
+def reset():
+    global RAT, REGS, ROB, ROB_start, ROB_CONT, last_physical_register
+    RAT = [None] * 5
+    REGS = list(range(5))
+    ROB = [(None, None)] * 5
+    ROB_start = 0
+    ROB_CONT = []
+    last_physical_register = Operand(0, True, True)
 
 
 class Instruction:
@@ -158,20 +162,21 @@ def print_tables():
 
 
 # Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    # print_tables()
-    process(Instruction(Opcode('DIV'), (Operand(2), Operand(4), Operand(3))))
-    process(Instruction(Opcode('MUL'), (Operand(3), Operand(50, False), Operand(4))))
-    process(Instruction(Opcode('DIV'), (Operand(1), Operand(2), Operand(3))))
-    process(Instruction(Opcode('ADD'), (Operand(2), Operand(4), Operand(3))))
-    process(Instruction(Opcode('ADD'), (Operand(3), Operand(2), Operand(3))))
-    print_tables()
-    cycle()
-    cycle()
-    cycle()
-    cycle()
-    cycle()
-    cycle()
-    cycle()
-    cycle()
-    print_tables()
+# if __name__ == '__main__':
+#     reset()
+#     # print_tables()
+#     process(Instruction(Opcode('DIV'), (Operand(2), Operand(4), Operand(3))))
+#     process(Instruction(Opcode('MUL'), (Operand(3), Operand(50, False), Operand(4))))
+#     process(Instruction(Opcode('DIV'), (Operand(1), Operand(2), Operand(3))))
+#     process(Instruction(Opcode('ADD'), (Operand(2), Operand(4), Operand(3))))
+#     process(Instruction(Opcode('ADD'), (Operand(3), Operand(2), Operand(3))))
+#     print_tables()
+#     cycle()
+#     cycle()
+#     cycle()
+#     cycle()
+#     cycle()
+#     cycle()
+#     cycle()
+#     cycle()
+#     print_tables()
