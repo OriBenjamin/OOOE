@@ -155,6 +155,7 @@ class Tables:
         self.last_physical_register = Operand(0, True, True)
 
     def process(self, instruction: Instruction):
+        # TODO: fix changing RAT bug
         self.ROB[self.last_physical_register.value] = (instruction.operands[0], None)
         self.ROB_CONT.append(
             [instruction.opcode, False, instruction.operands[1], False, instruction.operands[2],

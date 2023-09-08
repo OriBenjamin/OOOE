@@ -5,8 +5,11 @@ from typing import Optional
 import uuid
 import tables
 from tables import Instruction, Opcode, Operand
+from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
+CORS(app, resources={r"*": {"origins": "*"}})
+app.config['PROPAGATE_EXCEPTIONS'] = False
 app.secret_key = "your_secret_key_here"
 
 sessions = {}
@@ -31,6 +34,7 @@ def jsonRobCont(session_tables):
 
 
 def stringToOperand(string):
+    print(string)
     if string[0] == 'R':
         return Operand(int(string[1:]), True, False)
     elif string[0] == 'P':
@@ -40,6 +44,7 @@ def stringToOperand(string):
 
 
 @app.route('/start-session', methods=['POST'])
+@cross_origin()
 def start_session():
     session_id = str(uuid.uuid4())
     sessions[session_id] = {'tables': tables.Tables(), 'expiration': datetime.now()+timedelta(hours=1)}  # create new tables for this session
@@ -47,6 +52,7 @@ def start_session():
 
 
 @app.route('/end-session', methods=['POST'])
+@cross_origin()
 def end_session():
     if request.json['session_id'] not in sessions:
         return jsonify(error='Session not started')
@@ -55,6 +61,8 @@ def end_session():
 
 
 @app.route('/fetch', methods=['POST'])
+@cross_origin()
+# if error return 500 and error message
 def fetch_instruction():
     if request.json['session_id'] not in sessions:
         return jsonify(error='Session not started')
