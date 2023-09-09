@@ -34,7 +34,6 @@ def jsonRobCont(session_tables):
 
 
 def stringToOperand(string):
-    print(string)
     if string[0] == 'R':
         return Operand(int(string[1:]), True, False)
     elif string[0] == 'P':
@@ -87,6 +86,7 @@ def fetch_instruction():
             'RAT': session_tables.RAT,
             'ROB': jsonRob(session_tables),
             'ROB_CONT': jsonRobCont(session_tables),
+            'REGS': session_tables.REGS,
         },
     }
     return jsonify(response)
@@ -109,6 +109,7 @@ def run_cycle():
             'RAT': session_tables.RAT,
             'ROB': jsonRob(session_tables),
             'ROB_CONT': jsonRobCont(session_tables),
+            'REGS': session_tables.REGS,
         },
     }
     return jsonify(response)
@@ -129,6 +130,7 @@ def reset():
             'RAT': session_tables.RAT,
             'ROB': jsonRob(session_tables),
             'ROB_CONT': jsonRobCont(session_tables),
+            'REGS': session_tables.REGS,
         },
     }
     return jsonify(response)

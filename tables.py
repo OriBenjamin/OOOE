@@ -139,7 +139,7 @@ class Instruction:
 
 class Tables:
     def __init__(self):
-        self.RAT = [None] * 5
+        self.RAT: list[float | None] = [None] * 5
         self.REGS: list[float] = list(range(5))
         self.ROB: list[tuple[Optional[Operand], Optional[float]]] = [(None, None)] * 5
         self.ROB_start = 0
@@ -160,30 +160,35 @@ class Tables:
         self.ROB_CONT.append(
             [instruction.opcode, False, instruction.operands[1], False, instruction.operands[2],
              self.last_physical_register])
+        new_row = self.ROB_CONT[-1]
         if not instruction.operands[1].is_register:
-            self.ROB_CONT[-1][1] = True
+            new_row[1] = True
         else:
             if self.RAT[instruction.operands[1].value] is not None:
-                self.ROB_CONT[-1][1] = False
-                self.ROB_CONT[-1][2] = Operand(self.RAT[instruction.operands[1].value], True, True)
+                new_row[1] = False
+                new_row[2] = Operand(self.RAT[instruction.operands[1].value], True, True)
             else:
-                self.ROB_CONT[-1][1] = True
-                self.ROB_CONT[-1][2] = Operand(self.REGS[instruction.operands[1].value], False)
+                new_row[1] = True
+                # Change ready register to number
+                new_row[2] = Operand(self.REGS[instruction.operands[1].value], False)
         if not instruction.operands[2].is_register:
-            self.ROB_CONT[-1][3] = True
+            new_row[3] = True
         else:
             if self.RAT[instruction.operands[2].value] is not None:
-                self.ROB_CONT[-1][3] = False
-                self.ROB_CONT[-1][4] = Operand(self.RAT[instruction.operands[2].value], True, True)
+                new_row[3] = False
+                new_row[4] = Operand(self.RAT[instruction.operands[2].value], True, True)
             else:
-                self.ROB_CONT[-1][3] = True
-                self.ROB_CONT[-1][4] = Operand(self.REGS[instruction.operands[2].value], False)
+                new_row[3] = True
+                new_row[4] = Operand(self.REGS[instruction.operands[2].value], False)
+        # self.last_physical_register.value = self.REGS[instruction.operands[0].value]
         self.RAT[instruction.operands[0].value] = self.last_physical_register.value
         self.last_physical_register = Operand(self.last_physical_register.value + 1, True, True)
 
     def cycle(self):
         while self.ROB_start < len(self.ROB) and self.ROB[self.ROB_start][0] is not None and self.ROB[self.ROB_start][1] is not None:
             self.REGS[self.ROB[self.ROB_start][0].value] = self.ROB[self.ROB_start][1]
+            if self.ROB_start == self.RAT[self.ROB[self.ROB_start][0].value]:
+                self.RAT[self.ROB[self.ROB_start][0].value] = None
             self.ROB[self.ROB_start] = (None, None)
             self.ROB_start += 1
         readyValues = []
@@ -209,7 +214,9 @@ def print_tables(tables: Tables):
         'Reg': [f"R{i}" for i in range(len(tables.RAT))],
         'ROB/RRF': ["RRF" if (reg is None) else "ROB" for reg in tables.RAT],
         'Phys': [f"P{reg}" if (reg is not None) else "" for reg in tables.RAT],
-        'Val': tables.RAT
+        # show the physical register value if it exists, otherwise show the logical register value
+        # 'val': [f"{reg}" if (reg is not None) else f"{tables.REGS[i]}" for i, reg in enumerate(tables.RAT)],
+        'val': [f"{reg}" if (reg is not None) else "" for reg in tables.REGS],
     }
     print("RAT:")
     print(tabulate(rat_table, headers='keys', tablefmt='psql'))
@@ -229,21 +236,23 @@ def print_tables(tables: Tables):
 
 
 # Press the green button in the gutter to run the script.
-# if __name__ == '__main__':
-#     reset()
-#     # print_tables()
-#     process(Instruction(Opcode('DIV'), (Operand(2), Operand(4), Operand(3))))
-#     process(Instruction(Opcode('MUL'), (Operand(3), Operand(50, False), Operand(4))))
-#     process(Instruction(Opcode('DIV'), (Operand(1), Operand(2), Operand(3))))
-#     process(Instruction(Opcode('ADD'), (Operand(2), Operand(4), Operand(3))))
-#     process(Instruction(Opcode('ADD'), (Operand(3), Operand(2), Operand(3))))
-#     print_tables()
-#     cycle()
-#     cycle()
-#     cycle()
-#     cycle()
-#     cycle()
-#     cycle()
-#     cycle()
-#     cycle()
-#     print_tables()
+if __name__ == '__main__':
+    table = Tables()
+    table.reset()
+    # print_tables()
+    table.process(Instruction(Opcode('DIV'), (Operand(2), Operand(4), Operand(3))))
+    table.process(Instruction(Opcode('MUL'), (Operand(3), Operand(50, False), Operand(4))))
+    table.process(Instruction(Opcode('DIV'), (Operand(1), Operand(2), Operand(3))))
+    table.process(Instruction(Opcode('ADD'), (Operand(2), Operand(4), Operand(3))))
+    table.process(Instruction(Opcode('ADD'), (Operand(3), Operand(2), Operand(3))))
+    print_tables(table)
+    table.cycle()
+    table.cycle()
+    table.cycle()
+    table.cycle()
+    table.cycle()
+    table.cycle()
+    table.cycle()
+    table.cycle()
+    table.cycle()
+    print_tables(table)
