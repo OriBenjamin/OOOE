@@ -53,8 +53,6 @@ class Opcode:
             return src1 / src2
 
 
-# TODO: move to a class
-
 # RAT = [None] * 5
 # REGS: list[float] = list(range(5))
 # ROB: list[tuple[Optional[Operand], Optional[float]]] = [(None, None)] * 5
@@ -196,7 +194,8 @@ class Tables:
             if inst[1] and inst[3]:
                 inst[0].cycles -= 1
                 if inst[0].cycles == 0:
-                    self.ROB[inst[5].value] = (self.ROB[inst[5].value][0], inst[0].compute(inst[2].value, inst[4].value))
+                    self.ROB[inst[5].value] = (
+                        self.ROB[inst[5].value][0], inst[0].compute(inst[2].value, inst[4].value))
                     readyValues.append((inst[5], self.ROB[inst[5].value][1]))
                     self.ROB_CONT.remove(inst)
         for readyValue in readyValues:
