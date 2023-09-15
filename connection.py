@@ -29,7 +29,7 @@ def jsonRobCont(session_tables):
     jsonROB_CONT = []
     for i in session_tables.ROB_CONT:
         jsonROB_CONT.append([i[0].name, i[1], getattr(i[2], '__dict__', None), i[3], getattr(i[4], '__dict__', None),
-                             getattr(i[5], '__dict__', None)])
+                             getattr(i[5], '__dict__', None), i[0].cycles])
     return jsonROB_CONT
 
 
