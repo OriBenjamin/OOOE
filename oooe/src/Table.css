@@ -1,0 +1,54 @@
+h2 {
+    font-family: monospace;
+    font-size: 25px;
+    &:hover {
+        color: #588c7e;
+    }
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    color: #588c7e;
+    font-family: monospace;
+    font-size: 20px;
+    text-align: left;
+    margin: 10px;
+    border-radius: 5px;
+
+    & th {
+        background-color: #588c7e;
+        color: white;
+        padding: 5px;
+        margin: 5px;
+    }
+
+    & td {
+        padding: 5px;
+    }
+
+    & tr:hover {background-color: #f5f5f5;}
+}
+
+.tables > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 10px;
+}
+
+.drag {
+    background-color: #588c7e;
+    color: white;
+    padding: 5px;
+    margin: 5px;
+    width: 50px;
+    height: 40px;
+    border-radius: 5px;
+    border-color:#588c7e;
+    position: absolute;
+    border: none;
+    cursor: pointer;
+    font-family: monospace;
+    font-size: 12px;
+}
