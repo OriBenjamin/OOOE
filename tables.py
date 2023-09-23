@@ -26,18 +26,9 @@ class Operand:
 
 
 class Opcode:
-    def __init__(self, name):
+    def __init__(self, name, cycles=0):
         self.name = name
-        if self.name == 'ADD':
-            self.cycles = 1
-        elif self.name == 'SUB':
-            self.cycles = 1
-        elif self.name == 'MUL':
-            self.cycles = 2
-        elif self.name == 'DIV':
-            self.cycles = 4
-        else:
-            raise Exception("Invalid opcode")
+        self.cycles = cycles
 
     def __str__(self):
         return self.name
@@ -53,82 +44,16 @@ class Opcode:
             return src1 / src2
 
 
-# RAT = [None] * 5
-# REGS: list[float] = list(range(5))
-# ROB: list[tuple[Optional[Operand], Optional[float]]] = [(None, None)] * 5
-# ROB_start = 0
-# ROB_CONT = []
-# last_physical_register = Operand(0, True, True)
-
-
-# def reset():
-#     global RAT, REGS, ROB, ROB_start, ROB_CONT, last_physical_register
-#     RAT = [None] * 5
-#     REGS = list(range(5))
-#     ROB = [(None, None)] * 5
-#     ROB_start = 0
-#     ROB_CONT = []
-#     last_physical_register = Operand(0, True, True)
-
-# def process(instruction: Instruction):
-#     global last_physical_register
-#     ROB[last_physical_register.value] = (instruction.operands[0], None)
-#     ROB_CONT.append(
-#         [instruction.opcode, False, instruction.operands[1], False, instruction.operands[2], last_physical_register])
-#     if not instruction.operands[1].is_register:
-#         ROB_CONT[-1][1] = True
-#     else:
-#         if RAT[instruction.operands[1].value] is not None:
-#             ROB_CONT[-1][1] = False
-#             ROB_CONT[-1][2] = Operand(RAT[instruction.operands[1].value], True, True)
-#         else:
-#             ROB_CONT[-1][1] = True
-#             ROB_CONT[-1][2] = Operand(REGS[instruction.operands[1].value], False)
-#     if not instruction.operands[2].is_register:
-#         ROB_CONT[-1][3] = True
-#     else:
-#         if RAT[instruction.operands[2].value] is not None:
-#             ROB_CONT[-1][3] = False
-#             ROB_CONT[-1][4] = Operand(RAT[instruction.operands[2].value], True, True)
-#         else:
-#             ROB_CONT[-1][3] = True
-#             ROB_CONT[-1][4] = Operand(REGS[instruction.operands[2].value], False)
-#     RAT[instruction.operands[0].value] = last_physical_register.value
-#     last_physical_register = Operand(last_physical_register.value + 1, True, True)
-#
-#
-# def process_instructions(instructions):
-#     for instruction in instructions:
-#         process(instruction)
-#
-#
-# def cycle():
-#     global ROB_start
-#     while ROB_start < len(ROB) and ROB[ROB_start][0] is not None and ROB[ROB_start][1] is not None:
-#         REGS[ROB[ROB_start][0].value] = ROB[ROB_start][1]
-#         ROB[ROB_start] = (None, None)
-#         ROB_start += 1
-#     readyValues = []
-#     for inst in ROB_CONT:
-#         if inst[1] and inst[3]:
-#             inst[0].cycles -= 1
-#             if inst[0].cycles == 0:
-#                 ROB[inst[5].value] = (ROB[inst[5].value][0], inst[0].compute(inst[2].value, inst[4].value))
-#                 readyValues.append((inst[5], ROB[inst[5].value][1]))
-#                 ROB_CONT.remove(inst)
-#     for readyValue in readyValues:
-#         for inst in ROB_CONT:
-#             if inst[2] == readyValue[0]:
-#                 inst[1] = True
-#                 inst[2] = Operand(readyValue[1], False)
-#             if inst[4] == readyValue[0]:
-#                 inst[3] = True
-#                 inst[4] = Operand(readyValue[1], False)
-
-
 class Instruction:
-    def __init__(self, opcode: Opcode, operands: tuple[Operand, Operand, Operand]):
-        self.opcode = opcode
+    def __init__(self, opcode: str, operands: tuple[Operand, Operand, Operand], costs: dict[str, int] = None):
+        if costs is None:
+            costs = {
+                'ADD': 1,
+                'SUB': 1,
+                'MUL': 2,
+                'DIV': 4
+            }
+        self.opcode = Opcode(opcode, costs[opcode])
         self.operands = operands
 
     def __str__(self):
@@ -136,9 +61,20 @@ class Instruction:
 
 
 class Tables:
-    def __init__(self):
+    def __init__(self, starting_registers: list[float] = None, costs: dict[str, int] = None):
+        if starting_registers is None:
+            starting_registers = list(range(5))
+        if costs is None:
+            costs = {
+                'ADD': 1,
+                'SUB': 1,
+                'MUL': 2,
+                'DIV': 4
+            }
         self.RAT: list[float | None] = [None] * 5
-        self.REGS: list[float] = list(range(5))
+        self.starting_registers = starting_registers
+        self.REGS: list[float] = starting_registers
+        self.costs = costs
         self.ROB: list[tuple[Optional[Operand], Optional[float]]] = [(None, None)] * 5
         self.ROB_start = 0
         self.ROB_CONT = []
@@ -146,7 +82,7 @@ class Tables:
 
     def reset(self):
         self.RAT = [None] * 5
-        self.REGS: list[float] = list(range(5))
+        self.REGS: list[float] = self.starting_registers
         self.ROB: list[tuple[Optional[Operand], Optional[float]]] = [(None, None)] * 5
         self.ROB_start = 0
         self.ROB_CONT = []
@@ -239,11 +175,11 @@ if __name__ == '__main__':
     table = Tables()
     table.reset()
     # print_tables()
-    table.process(Instruction(Opcode('DIV'), (Operand(2), Operand(4), Operand(3))))
-    table.process(Instruction(Opcode('MUL'), (Operand(3), Operand(50, False), Operand(4))))
-    table.process(Instruction(Opcode('DIV'), (Operand(1), Operand(2), Operand(3))))
-    table.process(Instruction(Opcode('ADD'), (Operand(2), Operand(4), Operand(3))))
-    table.process(Instruction(Opcode('ADD'), (Operand(3), Operand(2), Operand(3))))
+    table.process(Instruction('DIV', (Operand(2), Operand(4), Operand(3))))
+    table.process(Instruction('MUL', (Operand(3), Operand(50, False), Operand(4))))
+    table.process(Instruction('DIV', (Operand(1), Operand(2), Operand(3))))
+    table.process(Instruction('ADD', (Operand(2), Operand(4), Operand(3))))
+    table.process(Instruction('ADD', (Operand(3), Operand(2), Operand(3))))
     print_tables(table)
     table.cycle()
     table.cycle()

@@ -46,7 +46,14 @@ def stringToOperand(string):
 @cross_origin()
 def start_session():
     session_id = str(uuid.uuid4())
-    sessions[session_id] = {'tables': tables.Tables(), 'expiration': datetime.now()+timedelta(hours=1)}  # create new tables for this session
+    starting_registers = None
+    if request.json['starting_registers'] is not None:
+        starting_registers = request.json['starting_registers']
+    costs = None
+    if request.json['costs'] is not None:
+        costs = request.json['costs']
+    sessions[session_id] = {'tables': tables.Tables(starting_registers, costs),
+                            'expiration': datetime.now() + timedelta(hours=1)}  # create new tables for this session
     return jsonify(session_id=session_id)
 
 
@@ -59,19 +66,26 @@ def end_session():
     return jsonify(success=True)
 
 
+def check_session(session_id: str) -> Optional[jsonify]:
+    if session_id not in sessions:
+        return jsonify(error='Session not started')
+    if datetime.now() > sessions[session_id]['expiration']:
+        del sessions[session_id]
+        return jsonify(error='Session expired')
+    return None
+
+
 @app.route('/fetch', methods=['POST'])
 @cross_origin()
 # if error return 500 and error message
 def fetch_instruction():
-    if request.json['session_id'] not in sessions:
-        return jsonify(error='Session not started')
-    if datetime.now() > sessions[request.json['session_id']]['expiration']:
-        del sessions[request.json['session_id']]
-        return jsonify(error='Session expired')
+    result = check_session(request.json['session_id'])
+    if result is not None:
+        return result
     session_tables = sessions[request.json['session_id']]['tables']
     # get the new instruction from the request body
     fetched_instruction = request.json
-    instruction = Instruction(Opcode(fetched_instruction['opcode']),
+    instruction = Instruction(fetched_instruction['opcode'],
                               (stringToOperand(fetched_instruction['operands'][0]),
                                stringToOperand(fetched_instruction['operands'][1]),
                                stringToOperand(fetched_instruction['operands'][2])))
@@ -94,11 +108,9 @@ def fetch_instruction():
 
 @app.route('/cycle', methods=['POST'])
 def run_cycle():
-    if request.json['session_id'] not in sessions:
-        return jsonify(error='Session not started')
-    if datetime.now() > sessions[request.json['session_id']]['expiration']:
-        del sessions[request.json['session_id']]
-        return jsonify(error='Session expired')
+    result = check_session(request.json['session_id'])
+    if result is not None:
+        return result
     session_tables = sessions[request.json['session_id']]['tables']
 
     # Implement your logic to run a cycle
@@ -117,11 +129,9 @@ def run_cycle():
 
 @app.route('/reset', methods=['POST'])
 def reset():
-    if request.json['session_id'] not in sessions:
-        return jsonify(error='Session not started')
-    if datetime.now() > sessions[request.json['session_id']]['expiration']:
-        del sessions[request.json['session_id']]
-        return jsonify(error='Session expired')
+    result = check_session(request.json['session_id'])
+    if result is not None:
+        return result
     session_tables = sessions[request.json['session_id']]['tables']
 
     session_tables.reset()
