@@ -1,7 +1,7 @@
 import "./App.css";
 import useStates from "./useStates.js";
 // import { print_tables } from "./tables";
-import fetchData from "./fetch.js";
+
 // import Table from "./Table.js";
 import InputRegister from "./InputRegister";
 function Form(props) {
@@ -24,12 +24,11 @@ function Form(props) {
       // Handle special command logic
       console.log("Selected Special Command:", instruction.specialCommand);
     } else {
-      const fetchDataFunc = await fetchData;
+      const fetchDataFunc = props.fetchFunc;
       if (fetchDataFunc === null) {
         console.log("Could not fetch data");
         return;
       }
-      console.log(fetchDataFunc);
       const resultPromise = fetchDataFunc("/fetch", {
         opcode: instruction.operator,
         operands: [

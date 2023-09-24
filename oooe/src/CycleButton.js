@@ -1,9 +1,8 @@
 import React from "react";
-import fetchData from "./fetch.js";
 import "./App.css";
 export function CycleButton(props) {
   const handleCycleButton = async () => {
-    const fetchDataFunc = await fetchData;
+    const fetchDataFunc = props.fetchFunc;
     if (fetchDataFunc === null) {
       console.log("Could not fetch data");
       return;

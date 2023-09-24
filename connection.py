@@ -88,7 +88,8 @@ def fetch_instruction():
     instruction = Instruction(fetched_instruction['opcode'],
                               (stringToOperand(fetched_instruction['operands'][0]),
                                stringToOperand(fetched_instruction['operands'][1]),
-                               stringToOperand(fetched_instruction['operands'][2])))
+                               stringToOperand(fetched_instruction['operands'][2])),
+                              session_tables.costs)
     session_tables.process(instruction)
     # Implement your logic to fetch a new instruction
     # Return the current tables along with the fetched instruction (if any)

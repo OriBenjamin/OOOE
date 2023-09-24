@@ -1,6 +1,6 @@
 // Custom hook to fetch data from the API
 let url = 'http://localhost:5000';
-const fetchData = (async function() {
+const fetchData = (async function(starting_registers, costs) {
   try {
     const response = await fetch(url+'/start-session', {
         method: 'POST',
@@ -8,7 +8,7 @@ const fetchData = (async function() {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
             },
-            body: JSON.stringify({}),
+            body: JSON.stringify({starting_registers: starting_registers, costs: costs}),
             });
     const data = await response.json();
     console.log(data);
@@ -36,6 +36,6 @@ const fetchData = (async function() {
     console.error('Error starting session:', error);
     return null;
   }
-})();
+});
 
 export default fetchData;

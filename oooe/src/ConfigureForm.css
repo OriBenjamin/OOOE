@@ -1,0 +1,83 @@
+
+.configure-container {
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    flex-flow: column wrap;
+    width: 40vw;
+    height: 80vh;
+    overflow: hidden;
+    margin-left: 2vw;
+    text-align: center;
+    position: relative;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    max-height: 600px;
+    overflow-y: scroll;
+  }
+  
+  
+.arrow {
+    transform: translate(-50%, -50%);
+    transform: rotate(-90deg);
+    cursor: pointer;
+    margin-right: 1vw;
+
+
+ & button {
+    display: block;
+    width: 1.5vw;
+    height: 1.5vw;
+    background: transparent;
+    border: none;
+    border-bottom: 5px solid black;
+    border-right: 5px solid black;
+    transform: rotate(45deg);
+    margin: 1px;
+    cursor: pointer;
+    }
+
+  &:hover {
+    opacity: 0.5;
+  }
+}
+
+
+.registers-div, .costs-div{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* border  */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    & > div {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 10px; 
+    }
+
+    & input {
+        width: 3vw;
+        margin: 10px;
+    }
+}
+
+.configure-div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    
+  
+}
