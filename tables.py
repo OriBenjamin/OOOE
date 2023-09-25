@@ -26,9 +26,10 @@ class Operand:
 
 
 class Opcode:
-    def __init__(self, name, cycles=0):
+    def __init__(self, name, cycles=0, memory_opcode=None):
         self.name = name
         self.cycles = cycles
+        self.memory_opcode = memory_opcode
 
     def __str__(self):
         return self.name
@@ -42,18 +43,27 @@ class Opcode:
             return src1 * src2
         elif self.name == 'DIV':
             return src1 / src2
+        elif self.memory_opcode is not None:
+            return self.memory_opcode.compute(src1, src2)
+        else:
+            raise Exception(f"Can't compute opcode of {self.name}")
 
 
 class Instruction:
-    def __init__(self, opcode: str, operands: tuple[Operand, Operand, Operand], costs: dict[str, int] = None):
+    def __init__(self, op_name: str, operands: tuple[Operand, Operand, Operand], costs: dict[str, int] = None,
+                 memory_opcode: Opcode = None):
         if costs is None:
             costs = {
                 'ADD': 1,
                 'SUB': 1,
                 'MUL': 2,
-                'DIV': 4
+                'DIV': 4,
+                'LD': 1,
             }
-        self.opcode = Opcode(opcode, costs[opcode])
+        if op_name == 'LD':
+            self.opcode = Opcode(op_name, costs[op_name], memory_opcode)
+        else:
+            self.opcode = Opcode(op_name, costs[op_name])
         self.operands = operands
 
     def __str__(self):
@@ -79,6 +89,8 @@ class Tables:
         self.ROB_start = 0
         self.ROB_CONT = []
         self.last_physical_register = Operand(0, True, True)
+        self.LOAD_BUFFER = []
+        self.AGU = []
 
     def reset(self):
         self.RAT = [None] * 5
@@ -87,9 +99,10 @@ class Tables:
         self.ROB_start = 0
         self.ROB_CONT = []
         self.last_physical_register = Operand(0, True, True)
+        self.LOAD_BUFFER = []
+        self.AGU = []
 
     def process(self, instruction: Instruction):
-        # TODO: fix changing RAT bug
         self.ROB[self.last_physical_register.value] = (instruction.operands[0], None)
         self.ROB_CONT.append(
             [instruction.opcode, False, instruction.operands[1], False, instruction.operands[2],
@@ -117,6 +130,8 @@ class Tables:
         # self.last_physical_register.value = self.REGS[instruction.operands[0].value]
         self.RAT[instruction.operands[0].value] = self.last_physical_register.value
         self.last_physical_register = Operand(self.last_physical_register.value + 1, True, True)
+        if instruction.opcode.name == 'LD':
+            self.LOAD_BUFFER.append((len(self.ROB_CONT), None, None))
 
     def cycle(self):
         while self.ROB_start < len(self.ROB) and self.ROB[self.ROB_start][0] is not None and self.ROB[self.ROB_start][1] is not None:
@@ -130,9 +145,12 @@ class Tables:
             if inst[1] and inst[3]:
                 inst[0].cycles -= 1
                 if inst[0].cycles == 0:
-                    self.ROB[inst[5].value] = (
-                        self.ROB[inst[5].value][0], inst[0].compute(inst[2].value, inst[4].value))
-                    readyValues.append((inst[5], self.ROB[inst[5].value][1]))
+                    if inst[0].name == 'LD':
+                        self.AGU.append(inst[0].compute(inst[2].value, inst[4].value))
+                    else:
+                        self.ROB[inst[5].value] = (
+                            self.ROB[inst[5].value][0], inst[0].compute(inst[2].value, inst[4].value))
+                        readyValues.append((inst[5], self.ROB[inst[5].value][1]))
                     self.ROB_CONT.remove(inst)
         for readyValue in readyValues:
             for inst in self.ROB_CONT:
